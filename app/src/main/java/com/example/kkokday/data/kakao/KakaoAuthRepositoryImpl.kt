@@ -4,8 +4,6 @@ import android.content.Context
 import android.util.Log
 import com.kakao.sdk.auth.AuthApiClient
 import com.kakao.sdk.auth.model.OAuthToken
-// TEMP-TEST: 신규가입 플로우 테스트용 — 테스트 끝나면 제거
-import com.kakao.sdk.auth.model.Prompt
 import com.kakao.sdk.common.model.ClientError
 import com.kakao.sdk.common.model.ClientErrorCause
 import com.kakao.sdk.user.UserApiClient
@@ -111,8 +109,7 @@ class KakaoAuthRepositoryImpl @Inject constructor() : KakaoAuthRepository {
 
             val kakaoTalkAvailable = UserApiClient.instance.isKakaoTalkLoginAvailable(context)
             Log.d(TAG, "[3] isKakaoTalkLoginAvailable=$kakaoTalkAvailable")
-            // TEMP-TEST: 신규가입 플로우 테스트용 — 테스트 끝나면 제거 (아래 "false && " 지우고 kakaoTalkAvailable만 남길 것)
-            if (false && kakaoTalkAvailable) {
+            if (kakaoTalkAvailable) {
                 UserApiClient.instance.loginWithKakaoTalk(context) { token, error ->
                     Log.d(TAG, "[3a] loginWithKakaoTalk 콜백 도착 — token=${token != null}, error=$error")
                     when {
@@ -130,12 +127,7 @@ class KakaoAuthRepositoryImpl @Inject constructor() : KakaoAuthRepository {
                     }
                 }
             } else {
-                UserApiClient.instance.loginWithKakaoAccount(
-                    context,
-                    // TEMP-TEST: 신규가입 플로우 테스트용 — 테스트 끝나면 이 줄 제거
-                    prompts = listOf(Prompt.LOGIN),
-                    callback = onAccountResult,
-                )
+                UserApiClient.instance.loginWithKakaoAccount(context, callback = onAccountResult)
             }
         }
     }
