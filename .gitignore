@@ -1,0 +1,24 @@
+*.iml
+.gradle
+/local.properties
+/.idea/caches
+/.idea/libraries
+/.idea/modules.xml
+/.idea/workspace.xml
+/.idea/navEditor.xml
+/.idea/assetWizardSettings.xml
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+.cxx
+local.properties
+
+# Firebase service account key - never commit
+*firebase-adminsdk*.json
+
+# 서명 키스토어 / 비밀번호 파일 - 절대 커밋하지 않음
+*.jks
+*.keystore
+*.p12
+keystore.properties

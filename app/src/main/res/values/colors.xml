@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="purple_200">#FFBB86FC</color>
+    <color name="purple_500">#FF6200EE</color>
+    <color name="purple_700">#FF3700B3</color>
+    <color name="teal_200">#FF03DAC5</color>
+    <color name="teal_700">#FF018786</color>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+    <color name="kkokday_cream">#FBF3E6</color>
+    <!-- splash.png 상단 배경을 실제로 샘플링한 값(#FEF8F0) — kkokday_cream과 아주 가깝지만
+         동일하지는 않다. 시스템 스플래시 화면이 splash.png와 픽셀 단위로 이어지도록
+         이 값을 그대로 쓴다. -->
+    <color name="splash_background">#FEF8F0</color>
+</resources>

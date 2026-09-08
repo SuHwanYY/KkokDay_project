@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "925187871740",
+    "project_id": "kkokday",
+    "storage_bucket": "kkokday.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:925187871740:android:7be3e7e6407dfc22165879",
+        "android_client_info": {
+          "package_name": "com.example.kkokday"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDxBPq4uKcllr9mUyUDF7lgLTVZg0Fc9TY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:925187871740:android:a05d7ebff1f6dcaf165879",
+        "android_client_info": {
+          "package_name": "com.suhwan.kkokday"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDxBPq4uKcllr9mUyUDF7lgLTVZg0Fc9TY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

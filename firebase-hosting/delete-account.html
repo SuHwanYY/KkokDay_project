@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>콕데이 계정삭제 요청</title>
+
+    <!-- accountDeletionRequests 컬렉션은 firestore.rules에서 로그인 없이도 create만
+         허용해뒀다 — 앱 미설치 사용자도 이 페이지에서 이메일만으로 삭제를 요청할 수 있다. -->
+    <script defer src="/__/firebase/12.18.0/firebase-app-compat.js"></script>
+    <script defer src="/__/firebase/12.18.0/firebase-firestore-compat.js"></script>
+    <script defer src="/__/firebase/init.js"></script>
+
+    <style>
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        background: #FFFBF0;
+        color: #333333;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans KR", sans-serif;
+      }
+      .wrap {
+        max-width: 480px;
+        margin: 0 auto;
+        padding: 24px 20px 48px;
+      }
+      .brand {
+        font-size: 13px;
+        font-weight: 700;
+        color: #FFC83D;
+        letter-spacing: 0.02em;
+        margin-bottom: 8px;
+      }
+      h1 {
+        font-size: 22px;
+        margin: 0 0 4px;
+      }
+      p {
+        font-size: 14px;
+        line-height: 1.7;
+        color: #444444;
+        margin: 0 0 10px;
+      }
+      .intro {
+        color: #666666;
+        margin: 12px 0 24px;
+      }
+      .notice-card {
+        background: #FFFFFF;
+        border: 1px solid #ECECEC;
+        border-radius: 14px;
+        padding: 16px;
+        margin: 0 0 24px;
+      }
+      .notice-card p {
+        margin: 0 0 8px;
+        font-size: 13px;
+      }
+      .notice-card p:last-child {
+        margin-bottom: 0;
+      }
+      .notice-card ul {
+        margin: 0 0 8px;
+        padding-left: 20px;
+      }
+      .notice-card li {
+        font-size: 13px;
+        line-height: 1.7;
+        color: #444444;
+        margin-bottom: 4px;
+      }
+      label {
+        display: block;
+        font-size: 13px;
+        font-weight: 700;
+        color: #333333;
+        margin-bottom: 6px;
+      }
+      input[type="email"] {
+        width: 100%;
+        padding: 12px 14px;
+        border: 1px solid #ECECEC;
+        border-radius: 10px;
+        font-size: 15px;
+        font-family: inherit;
+        background: #FFFFFF;
+        margin-bottom: 4px;
+      }
+      input[type="email"]:focus {
+        outline: none;
+        border-color: #FFC83D;
+      }
+      .field-error {
+        min-height: 18px;
+        font-size: 12px;
+        color: #FF6B6B;
+        margin: 4px 0 16px;
+      }
+      .submit-btn {
+        width: 100%;
+        padding: 13px;
+        background: #FFC83D;
+        color: #333333;
+        font-weight: 700;
+        font-size: 15px;
+        border: none;
+        border-radius: 10px;
+        cursor: pointer;
+      }
+      .submit-btn:disabled {
+        opacity: 0.6;
+        cursor: default;
+      }
+      .submit-message {
+        min-height: 18px;
+        font-size: 13px;
+        color: #FF6B6B;
+        margin-top: 10px;
+        text-align: center;
+      }
+      .state {
+        text-align: center;
+        padding: 40px 12px;
+      }
+      .state-icon {
+        font-size: 40px;
+        margin-bottom: 12px;
+      }
+      .state-title {
+        font-size: 18px;
+        font-weight: 700;
+        color: #333333;
+        margin: 0 0 8px;
+      }
+      .state-desc {
+        font-size: 14px;
+        color: #666666;
+        line-height: 1.7;
+        margin: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="brand">콕데이</div>
+      <h1>계정삭제 요청</h1>
+      <p class="intro">
+        콕데이 앱을 설치하지 않고도, 아래 이메일로 계정삭제를 요청할 수 있어요.
+      </p>
+
+      <div class="notice-card">
+        <p><strong>삭제 요청 시 안내</strong></p>
+        <ul>
+          <li>가입하신 이메일을 정확히 입력해주세요 — 계정 확인에 사용됩니다.</li>
+          <li>요청이 접수되면 영업일 기준 5일 이내에 계정과 작성하신 리뷰·코스 등 관련 데이터가 삭제됩니다.</li>
+          <li>처리 결과는 별도로 안내드리지 않을 수 있어요. 문의는 tnghks2100@naver.com으로 해주세요.</li>
+        </ul>
+      </div>
+
+      <div id="content">
+        <form id="delete-form">
+          <label for="email">가입한 이메일</label>
+          <input id="email" type="email" placeholder="example@email.com" required maxlength="200" />
+          <div id="field-error" class="field-error"></div>
+          <button id="submit-btn" class="submit-btn" type="submit">계정삭제 요청</button>
+          <div id="submit-message" class="submit-message"></div>
+        </form>
+      </div>
+    </div>
+
+    <script>
+      function isValidEmail(value) {
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+      }
+
+      function renderSuccess() {
+        document.getElementById('content').innerHTML =
+          '<div class="state">' +
+          '<div class="state-icon">✅</div>' +
+          '<p class="state-title">요청이 접수됐어요</p>' +
+          '<p class="state-desc">영업일 기준 5일 이내에 계정과 관련 데이터가 삭제됩니다.</p>' +
+          '</div>';
+      }
+
+      document.addEventListener('DOMContentLoaded', function () {
+        var form = document.getElementById('delete-form');
+        var emailInput = document.getElementById('email');
+        var fieldError = document.getElementById('field-error');
+        var submitBtn = document.getElementById('submit-btn');
+        var submitMessage = document.getElementById('submit-message');
+        var isSubmitting = false;
+
+        function withFirebase(callback, retriesLeft) {
+          if (window.firebase && window.firebase.firestore) {
+            callback();
+            return;
+          }
+          if (retriesLeft <= 0) {
+            submitMessage.textContent = '페이지를 불러오지 못했어요. 잠시 후 다시 시도해주세요.';
+            return;
+          }
+          setTimeout(function () { withFirebase(callback, retriesLeft - 1); }, 100);
+        }
+
+        form.addEventListener('submit', function (event) {
+          event.preventDefault();
+          if (isSubmitting) return;
+
+          var email = emailInput.value.trim();
+          if (!isValidEmail(email)) {
+            fieldError.textContent = '올바른 이메일 형식을 입력해주세요.';
+            return;
+          }
+          fieldError.textContent = '';
+          submitMessage.textContent = '';
+
+          isSubmitting = true;
+          submitBtn.disabled = true;
+          submitBtn.textContent = '요청 중...';
+
+          withFirebase(function () {
+            firebase
+              .firestore()
+              .collection('accountDeletionRequests')
+              .add({
+                email: email,
+                requestedAt: firebase.firestore.FieldValue.serverTimestamp(),
+              })
+              .then(function () {
+                renderSuccess();
+              })
+              .catch(function (error) {
+                console.error(error);
+                isSubmitting = false;
+                submitBtn.disabled = false;
+                submitBtn.textContent = '계정삭제 요청';
+                submitMessage.textContent = '요청에 실패했어요. 다시 시도해주세요.';
+              });
+          }, 50);
+        });
+      });
+    </script>
+  </body>
+</html>

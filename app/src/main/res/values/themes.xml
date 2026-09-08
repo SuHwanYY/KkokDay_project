@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style name="Theme.KkokDay" parent="android:Theme.Material.Light.NoActionBar">
+        <!-- 시스템 스플래시가 사라지고 첫 Compose 프레임(SplashScreenContent)이 그려지기
+             전까지의 짧은 틈도 splash_background로 채워, 색이 끊기는 순간이 없게 한다. -->
+        <item name="android:windowBackground">@color/splash_background</item>
+    </style>
+
+    <!-- Android 12+ 콜드 스타트 시 시스템이 강제로 보여주는 시작 화면(SplashScreen API)
+         테마. 아이콘은 splash.png 안의 로고(핀+"콕데이" 글자) 부분만 잘라 배경을 투명
+         처리한 splash_logo_icon을 그대로 쓰고, 배경색도 splash.png 상단 배경과 동일한
+         톤(splash_background)으로 맞춰서 시스템 스플래시 → 실제 splash.png가 하나로
+         이어지는 것처럼 보이게 한다. 아이콘의 흰 원형 배지는 이 방식에서는 그려지지
+         않는다 — 런처 적응형 아이콘(mipmap/ic_launcher)이 아니라 배경이 투명한
+         일반 드로어블을 직접 지정했기 때문. -->
+    <style name="Theme.KkokDay.Splash" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/splash_background</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/splash_logo_icon</item>
+        <item name="postSplashScreenTheme">@style/Theme.KkokDay</item>
+    </style>
+</resources>

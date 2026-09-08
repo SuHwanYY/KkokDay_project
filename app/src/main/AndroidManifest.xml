@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <!-- 길찾기 바텀시트에서 PackageManager로 설치 여부를 확인할 지도 앱들.
+         Android 11+ 패키지 가시성 제한 때문에 여기 선언 안 하면 설치돼 있어도
+         getPackageInfo가 항상 NameNotFoundException을 던진다. -->
+    <queries>
+        <package android:name="net.daum.android.map" />
+        <package android:name="com.nhn.android.nmap" />
+        <package android:name="com.skt.tmap.ku" />
+    </queries>
+
+    <application
+        android:name=".KkokDayApplication"
+        android:allowBackup="true"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.KkokDay">
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:label="@string/app_name"
+            android:launchMode="singleTask"
+            android:theme="@style/Theme.KkokDay.Splash">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+
+            <!-- 비밀번호 재설정 딥링크: kokday://resetPassword?oobCode=...&mode=...
+                 (Firebase Dynamic Links는 종료되어 사용하지 않음. 커스텀 URL 스킴만 사용) -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data
+                    android:scheme="kokday"
+                    android:host="resetPassword" />
+            </intent-filter>
+        </activity>
+
+        <!-- 카카오 로그인 인가 코드 리다이렉트 수신용. scheme은 kakao{네이티브 앱 키} 형식이어야 함. -->
+        <activity
+            android:name="com.kakao.sdk.auth.AuthCodeHandlerActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data
+                    android:scheme="kakao${kakaoNativeAppKey}"
+                    android:host="oauth" />
+            </intent-filter>
+        </activity>
+    </application>
+
+</manifest>

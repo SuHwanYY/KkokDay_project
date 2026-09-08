@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>콕데이 - 비밀번호 재설정</title>
+</head>
+<body>
+  <p id="message">콕데이 앱으로 이동하고 있어요…</p>
+  <p>
+    자동으로 이동하지 않으면
+    <a id="fallback-link" href="#">여기를 눌러주세요</a>.
+  </p>
+
+  <script>
+    // Firebase가 이 페이지로 보낼 때 mode, oobCode, apiKey, lang, continueUrl 등을
+    // 쿼리 파라미터로 그대로 붙여서 전달한다. 그 쿼리를 그대로 앱의 커스텀 스킴으로
+    // 다시 넘겨서, 콕데이 앱이 오직 kokday://resetPassword?oobCode=... 형태의
+    // 딥링크 하나만 처리하면 되도록 한다.
+    var APP_SCHEME_URL = "kokday://resetPassword";
+    var query = window.location.search; // 예: "?mode=resetPassword&oobCode=XXXX&apiKey=..."
+    var target = APP_SCHEME_URL + query;
+
+    document.getElementById("fallback-link").href = target;
+    window.location.replace(target);
+  </script>
+</body>
+</html>
