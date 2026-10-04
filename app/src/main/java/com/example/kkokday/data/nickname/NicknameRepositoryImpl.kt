@@ -23,6 +23,15 @@ class NicknameRepositoryImpl @Inject constructor(
         !snapshot.exists()
     }
 
+    override suspend fun hasUserProfile(uid: String): Result<Boolean> = runAuthCatching {
+        firestore.get()
+            .collection(USERS_COLLECTION)
+            .document(uid)
+            .get()
+            .await()
+            .exists()
+    }
+
     override suspend fun reserveNickname(
         nickname: String,
         uid: String,

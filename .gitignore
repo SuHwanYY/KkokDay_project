@@ -22,3 +22,21 @@ local.properties
 *.keystore
 *.p12
 keystore.properties
+
+# 빌드 산출물
+*.apk
+*.aab
+
+# 내부 검토용 문서 (앞으로 추적 안 함, 과거 커밋 기록은 그대로 둠)
+/Claude outputs/
+
+# IDE 설정 전체 (앞으로 추적 안 함, 과거 커밋 기록은 그대로 둠)
+/.idea/
+
+# 디버그 로그 / 크래시 재현 파일
+*.log
+vote_crash.txt
+
+# '여기어때 잘난체' 폰트 - 재배포 금지 라이선스라 저장소에 포함하지 않음
+# (licenses/yeogi-jalnan-license.md 참고)
+app/src/main/res/font/yeogi_jalnan.otf

@@ -44,7 +44,8 @@ import com.example.kkokday.ui.theme.KkokDayMainSubText
 import com.example.kkokday.ui.theme.KkokDayMainTeal
 import com.example.kkokday.ui.theme.KkokDayMainTextDark
 import com.example.kkokday.ui.theme.KkokDayMainYellow
-import kotlin.math.ceil
+import com.example.kkokday.util.formatDistance
+import com.example.kkokday.util.formatWalkingTime
 
 /**
  * 장소 한 줄(카드) — 카테고리별 주변 검색 결과 화면과 즐겨찾기 탭 화면
@@ -202,26 +203,6 @@ fun PlaceActionButton(
         )
     }
 }
-
-fun formatDistance(distanceMeters: Int): String = if (distanceMeters >= 1000) {
-    "%.1fkm".format(distanceMeters / 1000.0)
-} else {
-    "${distanceMeters}m"
-}
-
-/**
- * 도보 소요시간 추정치 계산에 쓰는 상수. [distanceMeters]가 카카오 API의 직선거리라
- * 실제 도보 경로 시간과는 차이가 날 수 있는 "추정치"라는 점을 감안한다.
- */
-object WalkingTime {
-    /** 성인 평균 도보 속도(시속 약 4km) 기준 분당 이동 거리(m). 값 조정이 필요하면 이 상수만 바꾸면 된다. */
-    const val METERS_PER_MINUTE = 67
-
-    fun estimateMinutes(distanceMeters: Int): Int =
-        ceil(distanceMeters.toDouble() / METERS_PER_MINUTE).toInt().coerceAtLeast(1)
-}
-
-fun formatWalkingTime(distanceMeters: Int): String = "도보 ${WalkingTime.estimateMinutes(distanceMeters)}분"
 
 /** "4.5 · 12" 형태 — 앞의 별 아이콘과 합쳐 "★4.5 · 12"로 읽힌다. */
 fun formatRatingBadge(avgRating: Double, reviewCount: Int): String =

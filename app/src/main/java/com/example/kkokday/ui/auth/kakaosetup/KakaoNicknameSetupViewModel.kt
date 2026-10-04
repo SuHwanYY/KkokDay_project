@@ -31,7 +31,11 @@ class KakaoNicknameSetupViewModel @Inject constructor(
     private val kakaoSessionRepository: KakaoSessionRepository,
 ) : ViewModel() {
 
-    private val kakaoId: Long = checkNotNull(savedStateHandle[KkokDayRoute.KAKAO_NICKNAME_SETUP_ID_ARG])
+    // 이메일 회원가입 최초 완료 경로는 kakaoId가 없다 — 그 경우 null로 남고, 예약 후
+    // KakaoSession이 아니라 Firebase Auth displayName을 갱신한다(onSubmitClick 참고).
+    private val kakaoId: Long? = savedStateHandle
+        .get<String>(KkokDayRoute.KAKAO_NICKNAME_SETUP_ID_ARG)
+        ?.toLongOrNull()
     private val profileImageUrl: String? = savedStateHandle
         .get<String>(KkokDayRoute.KAKAO_NICKNAME_SETUP_PROFILE_IMAGE_ARG)
         ?.takeIf { it.isNotBlank() }
@@ -44,6 +48,7 @@ class KakaoNicknameSetupViewModel @Inject constructor(
         KakaoNicknameSetupUiState(
             nickname = suggestedNickname,
             nicknameError = nicknameErrorOrNull(suggestedNickname),
+            isKakaoFlow = kakaoId != null,
         ),
     )
     val uiState: StateFlow<KakaoNicknameSetupUiState> = _uiState.asStateFlow()
@@ -111,11 +116,18 @@ class KakaoNicknameSetupViewModel @Inject constructor(
             val nickname = state.nickname.trim()
             nicknameRepository.reserveNickname(nickname, uid, profileImageUrl)
                 .onSuccess {
-                    // KakaoSession의 닉네임 캐시도 실제로 확정된 닉네임으로 맞춰둔다 —
-                    // HomeViewModel이 홈 화면 인사말에 이 값을 그대로 쓴다.
-                    kakaoSessionRepository.saveSession(
-                        KakaoSession(kakaoId = kakaoId, nickname = nickname, profileImageUrl = profileImageUrl),
-                    )
+                    val kakaoId = kakaoId
+                    if (kakaoId != null) {
+                        // KakaoSession의 닉네임 캐시도 실제로 확정된 닉네임으로 맞춰둔다 —
+                        // HomeViewModel이 홈 화면 인사말에 이 값을 그대로 쓴다.
+                        kakaoSessionRepository.saveSession(
+                            KakaoSession(kakaoId = kakaoId, nickname = nickname, profileImageUrl = profileImageUrl),
+                        )
+                    } else {
+                        // 이메일 가입 경로 — HomeViewModel은 카카오 세션이 없으면 Firebase Auth
+                        // displayName을 인사말에 쓴다.
+                        authRepository.updateDisplayName(nickname)
+                    }
                     _uiState.update { it.copy(isLoading = false, setupComplete = true) }
                 }
                 .onFailure { error ->

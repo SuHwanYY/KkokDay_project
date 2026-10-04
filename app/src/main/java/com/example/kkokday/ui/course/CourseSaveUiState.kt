@@ -15,6 +15,8 @@ data class CourseSaveUiState(
     val showExistingCoursePicker: Boolean = false,
     val myCourses: List<Course> = emptyList(),
     val isLoadingMyCourses: Boolean = false,
+    /** 목록 바텀시트의 "새 코스 만들기"로 뜨는 이름(+설명) 입력 다이얼로그. */
+    val showNewCourseDialog: Boolean = false,
     /** 저장/실패 결과를 한 번 보여주고 소비(null로)할 토스트 메시지. */
     val toastMessage: String? = null,
 )

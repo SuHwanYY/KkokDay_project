@@ -94,7 +94,11 @@ private fun KakaoNicknameSetupScreenContent(
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "카카오 프로필의 닉네임을 그대로 쓰거나,\n원하는 닉네임으로 바꿔서 콕데이를 시작해보세요",
+                text = if (uiState.isKakaoFlow) {
+                    "카카오 프로필의 닉네임을 그대로 쓰거나,\n원하는 닉네임으로 바꿔서 콕데이를 시작해보세요"
+                } else {
+                    "가입하신 닉네임을 아직 확정하지 못했어요.\n닉네임을 다시 정해 콕데이를 시작해보세요"
+                },
                 style = MaterialTheme.typography.bodyMedium,
                 color = subTextColor,
             )

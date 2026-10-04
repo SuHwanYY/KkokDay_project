@@ -40,6 +40,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.kkokday.ui.theme.KkokDayBackgroundDark
 import com.example.kkokday.ui.theme.KkokDayCream
+import com.example.kkokday.ui.theme.KkokDayMainSubText
 import com.example.kkokday.ui.theme.KkokDayOrange
 import com.example.kkokday.ui.theme.KkokDaySubTextDark
 import com.example.kkokday.ui.theme.KkokDaySubTextLight
@@ -51,6 +52,7 @@ import com.example.kkokday.ui.theme.KkokDayTheme
 @Composable
 fun EmailVerificationScreen(
     onVerified: () -> Unit,
+    onNeedsNicknameSetup: (nicknameSuggestion: String?) -> Unit,
     onSignedOut: () -> Unit,
     viewModel: EmailVerificationViewModel = hiltViewModel(),
 ) {
@@ -59,6 +61,14 @@ fun EmailVerificationScreen(
     LaunchedEffect(uiState.isVerified) {
         if (uiState.isVerified) {
             onVerified()
+        }
+    }
+
+    LaunchedEffect(uiState.needsNicknameSetup) {
+        if (uiState.needsNicknameSetup) {
+            val nicknameSuggestion = uiState.nicknameSuggestionForSetup
+            viewModel.consumeNeedsNicknameSetup()
+            onNeedsNicknameSetup(nicknameSuggestion)
         }
     }
 
@@ -130,6 +140,16 @@ private fun EmailVerificationScreenContent(
                 },
                 style = MaterialTheme.typography.bodyMedium,
                 color = subTextColor,
+                modifier = Modifier.fillMaxWidth(),
+                textAlign = TextAlign.Center,
+            )
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            Text(
+                text = "메일이 안 보이면 스팸(정크) 메일함도 확인해주세요",
+                style = MaterialTheme.typography.bodyMedium,
+                color = KkokDayMainSubText,
                 modifier = Modifier.fillMaxWidth(),
                 textAlign = TextAlign.Center,
             )

@@ -61,6 +61,37 @@ class CourseSaveDelegate(
         updateState { it.copy(showExistingCoursePicker = false) }
     }
 
+    /** 보유 코스 목록에서 "새 코스 만들기" 클릭 — 목록 시트를 접고 이름(+설명) 다이얼로그를 띄운다. */
+    fun onCreateNewCourseClick() {
+        updateState { it.copy(showExistingCoursePicker = false, showNewCourseDialog = true) }
+    }
+
+    fun onDismissNewCourseDialog() {
+        updateState { it.copy(showNewCourseDialog = false) }
+    }
+
+    /**
+     * 새 코스를 만들면서 [places]를 바로 담는다 — [CourseRepository.createCourse]가 생성과
+     * 동시에 초기 장소 목록을 받으므로, 빈 코스를 만든 뒤 [addPlacesToCourse]로 다시 채우는
+     * 두 번의 호출 대신 한 번에 끝낸다(최종 결과는 기존 코스에 담을 때와 동일).
+     */
+    fun onConfirmNewCourse(title: String, description: String, places: List<CoursePlace>) {
+        if (title.isBlank()) return
+        scope.launch {
+            val uid = authRepository.currentUserUid()
+            if (uid == null) {
+                updateState { it.copy(showNewCourseDialog = false, toastMessage = "코스를 만들지 못했어요. 다시 시도해주세요.") }
+                return@launch
+            }
+            courseRepository.createCourse(uid, title, description, places)
+                .onSuccess { updateState { CourseSaveUiState(toastMessage = "\"$title\"을 만들고 담았어요") } }
+                .onFailure { error ->
+                    Log.w(TAG, "새 코스 생성 실패", error)
+                    updateState { it.copy(showNewCourseDialog = false, toastMessage = "코스 생성에 실패했어요. 다시 시도해주세요.") }
+                }
+        }
+    }
+
     fun onExistingCourseSelected(course: Course, places: List<CoursePlace>) {
         scope.launch {
             courseRepository.addPlacesToCourse(course.id, places)

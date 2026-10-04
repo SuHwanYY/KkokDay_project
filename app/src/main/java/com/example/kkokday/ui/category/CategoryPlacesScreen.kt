@@ -64,6 +64,7 @@ import com.example.kkokday.ui.common.KkokDaySnackbarHost
 import com.example.kkokday.ui.common.KkokDaySnackbarTone
 import com.example.kkokday.ui.common.showKkokDaySnackbar
 import com.example.kkokday.ui.course.ExistingCoursePickerBottomSheet
+import com.example.kkokday.ui.course.NewCourseDialog
 import com.example.kkokday.ui.directions.DirectionsBottomSheet
 import com.example.kkokday.ui.theme.KkokDayMainBackground
 import com.example.kkokday.ui.theme.KkokDayMainCardBorder
@@ -114,6 +115,9 @@ fun CategoryPlacesScreen(
         onCourseSaveClick = viewModel::onCourseSaveClick,
         onDismissExistingCoursePicker = viewModel::onDismissExistingCoursePicker,
         onExistingCourseSelected = viewModel::onExistingCourseSelected,
+        onCreateNewCourseClick = viewModel::onCreateNewCourseClick,
+        onDismissNewCourseDialog = viewModel::onDismissNewCourseDialog,
+        onConfirmNewCourse = viewModel::onConfirmNewCourse,
         onNavigateBack = onNavigateBack,
         onNavigateToCourses = onNavigateToCourses,
         onNavigateToPlaceReview = onNavigateToPlaceReview,
@@ -136,6 +140,9 @@ private fun CategoryPlacesScreenContent(
     onCourseSaveClick: () -> Unit,
     onDismissExistingCoursePicker: () -> Unit,
     onExistingCourseSelected: (Course) -> Unit,
+    onCreateNewCourseClick: () -> Unit,
+    onDismissNewCourseDialog: () -> Unit,
+    onConfirmNewCourse: (title: String, description: String) -> Unit,
     onNavigateBack: () -> Unit,
     onNavigateToCourses: () -> Unit,
     onNavigateToPlaceReview: (CategoryPlace) -> Unit,
@@ -172,10 +179,18 @@ private fun CategoryPlacesScreenContent(
             isLoading = courseSave.isLoadingMyCourses,
             onCourseSelected = onExistingCourseSelected,
             onDismiss = onDismissExistingCoursePicker,
+            onCreateNewCourseClick = onCreateNewCourseClick,
             onNavigateToCourseTab = {
                 onDismissExistingCoursePicker()
                 onNavigateToCourses()
             },
+        )
+    }
+
+    if (courseSave.showNewCourseDialog) {
+        NewCourseDialog(
+            onConfirm = onConfirmNewCourse,
+            onDismiss = onDismissNewCourseDialog,
         )
     }
 
@@ -504,6 +519,9 @@ private fun CategoryPlacesScreenPreview() {
             onCourseSaveClick = {},
             onDismissExistingCoursePicker = {},
             onExistingCourseSelected = {},
+            onCreateNewCourseClick = {},
+            onDismissNewCourseDialog = {},
+            onConfirmNewCourse = { _, _ -> },
             onNavigateBack = {},
             onNavigateToCourses = {},
             onNavigateToPlaceReview = {},

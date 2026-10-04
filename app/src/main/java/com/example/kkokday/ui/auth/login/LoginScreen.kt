@@ -63,7 +63,7 @@ fun LoginScreen(
     onNeedsEmailVerification: () -> Unit,
     onNavigateToSignup: () -> Unit,
     onNavigateToForgotPassword: () -> Unit,
-    onNeedsKakaoNicknameSetup: (kakaoId: Long, nicknameSuggestion: String?, profileImageUrl: String?) -> Unit,
+    onNeedsNicknameSetup: (kakaoId: Long?, nicknameSuggestion: String?, profileImageUrl: String?) -> Unit,
     viewModel: LoginViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -83,15 +83,13 @@ fun LoginScreen(
         }
     }
 
-    LaunchedEffect(uiState.needsKakaoNicknameSetup) {
-        if (uiState.needsKakaoNicknameSetup) {
+    LaunchedEffect(uiState.needsNicknameSetup) {
+        if (uiState.needsNicknameSetup) {
             val kakaoId = uiState.kakaoIdForNicknameSetup
-            val nicknameSuggestion = uiState.kakaoNicknameSuggestion
-            val profileImageUrl = uiState.kakaoProfileImageUrlForSetup
-            viewModel.consumeNeedsKakaoNicknameSetup()
-            if (kakaoId != null) {
-                onNeedsKakaoNicknameSetup(kakaoId, nicknameSuggestion, profileImageUrl)
-            }
+            val nicknameSuggestion = uiState.nicknameSuggestionForSetup
+            val profileImageUrl = uiState.profileImageUrlForSetup
+            viewModel.consumeNeedsNicknameSetup()
+            onNeedsNicknameSetup(kakaoId, nicknameSuggestion, profileImageUrl)
         }
     }
 

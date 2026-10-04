@@ -554,9 +554,14 @@ class CategoryPlacesViewModel @Inject constructor(
     fun onCourseSaveClick() = courseSaveDelegate.onSaveClick()
     fun onDismissExistingCoursePicker() = courseSaveDelegate.onDismissExistingCoursePicker()
     fun consumeCourseToastMessage() = courseSaveDelegate.consumeToastMessage()
+    fun onCreateNewCourseClick() = courseSaveDelegate.onCreateNewCourseClick()
+    fun onDismissNewCourseDialog() = courseSaveDelegate.onDismissNewCourseDialog()
 
     fun onExistingCourseSelected(course: Course) =
         courseSaveDelegate.onExistingCourseSelected(course, selectedCoursePlaces())
+
+    fun onConfirmNewCourse(title: String, description: String) =
+        courseSaveDelegate.onConfirmNewCourse(title, description, selectedCoursePlaces())
 
     private fun selectedCoursePlaces(): List<CoursePlace> {
         val selectedIds = _uiState.value.courseSave.selectedIds

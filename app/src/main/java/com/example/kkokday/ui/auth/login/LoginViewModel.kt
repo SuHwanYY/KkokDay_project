@@ -5,6 +5,8 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.kkokday.data.auth.AuthRepository
+import com.example.kkokday.data.auth.FirstSignupCompletionRepository
+import com.example.kkokday.data.auth.FirstSignupCompletionResult
 import com.example.kkokday.data.auth.toAuthErrorMessage
 import com.example.kkokday.data.kakao.KakaoAuthRepository
 import com.example.kkokday.data.kakao.KakaoFirebaseBridgeRepository
@@ -33,6 +35,7 @@ class LoginViewModel @Inject constructor(
     private val kakaoFirebaseBridgeRepository: KakaoFirebaseBridgeRepository,
     private val kakaoUserRepository: KakaoUserRepository,
     private val kakaoSessionRepository: KakaoSessionRepository,
+    private val firstSignupCompletionRepository: FirstSignupCompletionRepository,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(LoginUiState())
@@ -62,10 +65,36 @@ class LoginViewModel @Inject constructor(
                 .onSuccess {
                     // emailVerified는 캐시된 값일 수 있으므로 최신 상태를 다시 받아온 뒤 판단한다.
                     authRepository.reloadCurrentUser()
-                    if (authRepository.isCurrentUserEmailVerified()) {
-                        _uiState.update { it.copy(isLoading = false, loginSuccess = true) }
-                    } else {
+                    if (!authRepository.isCurrentUserEmailVerified()) {
                         _uiState.update { it.copy(isLoading = false, needsEmailVerification = true) }
+                        return@launch
+                    }
+
+                    val uid = authRepository.currentUserUid()
+                    if (uid == null) {
+                        _uiState.update {
+                            it.copy(isLoading = false, generalError = "로그인 정보를 찾을 수 없어요. 다시 로그인해주세요.")
+                        }
+                        return@launch
+                    }
+
+                    // 인증은 끝났지만 아직 users/{uid} 프로필이 없을 수 있다(로컬에 캐시해둔
+                    // 닉네임으로 예약을 아직 안 끝낸 경우) — 여기서 최초 가입을 마무리한다.
+                    when (val completion = firstSignupCompletionRepository.completeIfNeeded(uid)) {
+                        is FirstSignupCompletionResult.NeedsNicknameSetup -> _uiState.update {
+                            it.copy(
+                                isLoading = false,
+                                needsNicknameSetup = true,
+                                nicknameSuggestionForSetup = completion.nicknameSuggestion,
+                                profileImageUrlForSetup = completion.profileImageUrl,
+                            )
+                        }
+                        is FirstSignupCompletionResult.Failed -> _uiState.update {
+                            it.copy(isLoading = false, generalError = completion.message)
+                        }
+                        FirstSignupCompletionResult.AlreadyCompleted,
+                        is FirstSignupCompletionResult.Completed,
+                        -> _uiState.update { it.copy(isLoading = false, loginSuccess = true) }
                     }
                 }
                 .onFailure { error ->
@@ -138,10 +167,10 @@ class LoginViewModel @Inject constructor(
                         _uiState.update {
                             it.copy(
                                 isLoading = false,
-                                needsKakaoNicknameSetup = true,
+                                needsNicknameSetup = true,
                                 kakaoIdForNicknameSetup = userInfo.id,
-                                kakaoNicknameSuggestion = userInfo.nickname,
-                                kakaoProfileImageUrlForSetup = userInfo.profileImageUrl,
+                                nicknameSuggestionForSetup = userInfo.nickname,
+                                profileImageUrlForSetup = userInfo.profileImageUrl,
                             )
                         }
                         return@launch
@@ -183,13 +212,13 @@ class LoginViewModel @Inject constructor(
         _uiState.update { it.copy(loginSuccess = false) }
     }
 
-    fun consumeNeedsKakaoNicknameSetup() {
+    fun consumeNeedsNicknameSetup() {
         _uiState.update {
             it.copy(
-                needsKakaoNicknameSetup = false,
+                needsNicknameSetup = false,
                 kakaoIdForNicknameSetup = null,
-                kakaoNicknameSuggestion = null,
-                kakaoProfileImageUrlForSetup = null,
+                nicknameSuggestionForSetup = null,
+                profileImageUrlForSetup = null,
             )
         }
     }

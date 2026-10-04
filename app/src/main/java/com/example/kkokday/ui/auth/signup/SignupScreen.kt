@@ -27,6 +27,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -37,14 +38,16 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.kkokday.directions.ContactActionLauncher
-import com.example.kkokday.ui.auth.components.AuthOutlinedTextField
+import com.example.kkokday.ui.auth.components.EmailVerificationField
 import com.example.kkokday.ui.auth.components.NicknameCheckState
 import com.example.kkokday.ui.auth.components.NicknameField
 import com.example.kkokday.ui.auth.components.PRIVACY_POLICY_URL
@@ -60,15 +63,9 @@ import com.example.kkokday.ui.theme.KkokDayTextBlack
 import com.example.kkokday.ui.theme.KkokDayTextWhite
 import com.example.kkokday.ui.theme.KkokDayTheme
 
-/** 예전에 가입만 시작하고 인증을 끝내지 않은 본인 계정으로 판별됐을 때 보여줄 안내 문구. */
-const val EXISTING_UNVERIFIED_ACCOUNT_NOTICE =
-    "이전에 가입을 시작하셨던 이메일이에요. 인증 메일을 다시 보내드렸어요."
-
 @Composable
 fun SignupScreen(
     onSignUpSuccess: () -> Unit,
-    onExistingAccountLoginSuccess: () -> Unit,
-    onExistingUnverifiedAccount: (notice: String) -> Unit,
     onNavigateToForgotPassword: () -> Unit,
     onNavigateBack: () -> Unit,
     viewModel: SignupViewModel = hiltViewModel(),
@@ -82,18 +79,16 @@ fun SignupScreen(
         }
     }
 
-    LaunchedEffect(uiState.existingAccountLoginSuccess) {
-        if (uiState.existingAccountLoginSuccess) {
-            viewModel.consumeExistingAccountLoginSuccess()
-            onExistingAccountLoginSuccess()
+    // 메일 앱에서 링크를 누르고 다시 콕데이로 돌아왔을 때 자동으로 인증 여부를 재확인한다.
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner, viewModel) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                viewModel.checkEmailVerificationIfPending()
+            }
         }
-    }
-
-    LaunchedEffect(uiState.existingUnverifiedAccountDetected) {
-        if (uiState.existingUnverifiedAccountDetected) {
-            viewModel.consumeExistingUnverifiedAccountDetected()
-            onExistingUnverifiedAccount(EXISTING_UNVERIFIED_ACCOUNT_NOTICE)
-        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
     SignupScreenContent(
@@ -103,6 +98,8 @@ fun SignupScreen(
         onPasswordConfirmChange = viewModel::onPasswordConfirmChange,
         onNicknameChange = viewModel::onNicknameChange,
         onCheckNicknameClick = viewModel::onCheckNicknameClick,
+        onVerifyEmailClick = viewModel::onVerifyEmailClick,
+        onCheckEmailVerificationClick = viewModel::onCheckEmailVerificationClick,
         onTogglePasswordVisibility = viewModel::onTogglePasswordVisibility,
         onTogglePasswordConfirmVisibility = viewModel::onTogglePasswordConfirmVisibility,
         onToggleTermsAgreed = viewModel::onToggleTermsAgreed,
@@ -121,6 +118,8 @@ private fun SignupScreenContent(
     onPasswordConfirmChange: (String) -> Unit,
     onNicknameChange: (String) -> Unit,
     onCheckNicknameClick: () -> Unit,
+    onVerifyEmailClick: () -> Unit,
+    onCheckEmailVerificationClick: () -> Unit,
     onTogglePasswordVisibility: () -> Unit,
     onTogglePasswordConfirmVisibility: () -> Unit,
     onToggleTermsAgreed: () -> Unit,
@@ -179,16 +178,21 @@ private fun SignupScreenContent(
 
                 Spacer(modifier = Modifier.height(28.dp))
 
-                AuthOutlinedTextField(
-                    value = uiState.email,
-                    onValueChange = onEmailChange,
-                    label = "이메일",
-                    errorText = uiState.emailError,
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Email,
-                        imeAction = ImeAction.Next,
-                    ),
-                    keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
+                EmailVerificationField(
+                    email = uiState.email,
+                    onEmailChange = onEmailChange,
+                    emailError = uiState.emailError,
+                    isVerifyingEmail = uiState.isVerifyingEmail,
+                    emailVerificationSent = uiState.emailVerificationSent,
+                    isEmailVerified = uiState.isEmailVerified,
+                    isCheckingEmailVerification = uiState.isCheckingEmailVerification,
+                    emailVerificationInfoMessage = uiState.emailVerificationInfoMessage,
+                    resendCooldownSeconds = uiState.resendCooldownSeconds,
+                    canRequestEmailVerification = uiState.canRequestEmailVerification,
+                    subTextColor = subTextColor,
+                    onVerifyEmailClick = onVerifyEmailClick,
+                    onCheckEmailVerificationClick = onCheckEmailVerificationClick,
+                    onImeNext = { focusManager.moveFocus(FocusDirection.Down) },
                     modifier = Modifier.fillMaxWidth(),
                 )
 
@@ -314,6 +318,8 @@ private fun SignupScreenLightPreview() {
                 passwordConfirm = "password123",
                 nickname = "여행러",
                 nicknameCheckState = NicknameCheckState.AVAILABLE,
+                emailVerificationSent = true,
+                isEmailVerified = true,
                 isTermsAgreed = true,
                 isPrivacyAgreed = true,
             ),
@@ -322,6 +328,8 @@ private fun SignupScreenLightPreview() {
             onPasswordConfirmChange = {},
             onNicknameChange = {},
             onCheckNicknameClick = {},
+            onVerifyEmailClick = {},
+            onCheckEmailVerificationClick = {},
             onTogglePasswordVisibility = {},
             onTogglePasswordConfirmVisibility = {},
             onToggleTermsAgreed = {},
@@ -333,26 +341,29 @@ private fun SignupScreenLightPreview() {
     }
 }
 
-@Preview(name = "Dark", showBackground = true, heightDp = 1000)
+@Preview(name = "Dark - waiting for verification", showBackground = true, heightDp = 1000)
 @Composable
 private fun SignupScreenDarkPreview() {
     KkokDayTheme(darkTheme = true) {
         SignupScreenContent(
             uiState = SignupUiState(
-                email = "bad-email",
+                email = "test@kkokday.com",
                 password = "123",
                 passwordConfirm = "1234",
                 nickname = "a",
-                emailError = "올바른 이메일 형식이 아니에요",
                 passwordError = "비밀번호는 8자 이상이어야 해요",
                 passwordConfirmError = "비밀번호가 일치하지 않아요",
                 nicknameError = "닉네임은 2~10자로 입력해주세요",
+                emailVerificationSent = true,
+                resendCooldownSeconds = 125,
             ),
             onEmailChange = {},
             onPasswordChange = {},
             onPasswordConfirmChange = {},
             onNicknameChange = {},
             onCheckNicknameClick = {},
+            onVerifyEmailClick = {},
+            onCheckEmailVerificationClick = {},
             onTogglePasswordVisibility = {},
             onTogglePasswordConfirmVisibility = {},
             onToggleTermsAgreed = {},

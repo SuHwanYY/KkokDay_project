@@ -20,9 +20,6 @@ interface AuthRepository {
 
     suspend fun confirmPasswordReset(oobCode: String, newPassword: String): Result<Unit>
 
-    /** 닉네임 예약 등 가입 후속 처리가 실패했을 때 계정 생성을 되돌리기 위해 사용한다. */
-    suspend fun deleteCurrentUser(): Result<Unit>
-
     fun currentUserUid(): String?
 
     fun currentUserEmail(): String?

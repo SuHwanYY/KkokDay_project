@@ -10,10 +10,12 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.SearchOff
 import androidx.compose.material3.AlertDialog
@@ -24,6 +26,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.SheetState
@@ -134,6 +137,7 @@ fun ExistingCoursePickerBottomSheet(
     isLoading: Boolean,
     onCourseSelected: (Course) -> Unit,
     onDismiss: () -> Unit,
+    onCreateNewCourseClick: (() -> Unit)? = null,
     onNavigateToCourseTab: (() -> Unit)? = null,
     title: String = "코스에 담기",
     sheetState: SheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
@@ -155,7 +159,19 @@ fun ExistingCoursePickerBottomSheet(
                 fontWeight = FontWeight.Bold,
                 color = KkokDayMainTextDark,
             )
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(12.dp))
+            if (onCreateNewCourseClick != null) {
+                OutlinedButton(
+                    onClick = onCreateNewCourseClick,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = KkokDayMainTextDark),
+                ) {
+                    Icon(Icons.Filled.Add, contentDescription = null, tint = KkokDayMainYellow)
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text("새 코스 만들기", fontWeight = FontWeight.Bold)
+                }
+                Spacer(modifier = Modifier.height(16.dp))
+            }
             when {
                 isLoading -> Box(modifier = Modifier.fillMaxWidth().padding(vertical = 24.dp), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator(color = KkokDayMainYellow)

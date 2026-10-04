@@ -4,6 +4,8 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.kkokday.data.auth.AuthRepository
+import com.example.kkokday.data.auth.FirstSignupCompletionRepository
+import com.example.kkokday.data.auth.FirstSignupCompletionResult
 import com.example.kkokday.data.auth.toAuthErrorMessage
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -16,6 +18,7 @@ import javax.inject.Inject
 @HiltViewModel
 class EmailVerificationViewModel @Inject constructor(
     private val authRepository: AuthRepository,
+    private val firstSignupCompletionRepository: FirstSignupCompletionRepository,
     savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
 
@@ -46,16 +49,42 @@ class EmailVerificationViewModel @Inject constructor(
             authRepository.reloadCurrentUser()
                 .onSuccess {
                     val verified = authRepository.isCurrentUserEmailVerified()
-                    _uiState.update {
-                        it.copy(
-                            isChecking = false,
-                            isVerified = verified,
-                            infoMessage = when {
-                                verified -> null
-                                notice != null -> notice
-                                else -> "아직 인증이 확인되지 않았어요. 메일함을 확인해주세요."
-                            },
-                        )
+                    if (!verified) {
+                        _uiState.update {
+                            it.copy(
+                                isChecking = false,
+                                isVerified = false,
+                                infoMessage = notice ?: "아직 인증이 확인되지 않았어요. 메일함을 확인해주세요.",
+                            )
+                        }
+                        return@launch
+                    }
+
+                    val uid = authRepository.currentUserUid()
+                    if (uid == null) {
+                        _uiState.update {
+                            it.copy(isChecking = false, errorMessage = "로그인 정보를 찾을 수 없어요. 다시 로그인해주세요.")
+                        }
+                        return@launch
+                    }
+
+                    // 인증은 확인됐지만 아직 users/{uid} 프로필이 없을 수 있다(로컬에 캐시해둔
+                    // 닉네임으로 예약을 아직 안 끝낸 경우) — 여기서 최초 가입을 마무리한다.
+                    when (val completion = firstSignupCompletionRepository.completeIfNeeded(uid)) {
+                        is FirstSignupCompletionResult.NeedsNicknameSetup -> _uiState.update {
+                            it.copy(
+                                isChecking = false,
+                                infoMessage = null,
+                                needsNicknameSetup = true,
+                                nicknameSuggestionForSetup = completion.nicknameSuggestion,
+                            )
+                        }
+                        is FirstSignupCompletionResult.Failed -> _uiState.update {
+                            it.copy(isChecking = false, errorMessage = completion.message)
+                        }
+                        FirstSignupCompletionResult.AlreadyCompleted,
+                        is FirstSignupCompletionResult.Completed,
+                        -> _uiState.update { it.copy(isChecking = false, isVerified = true, infoMessage = null) }
                     }
                 }
                 .onFailure { error ->
@@ -81,5 +110,9 @@ class EmailVerificationViewModel @Inject constructor(
 
     fun onSignOutClick() {
         authRepository.signOut()
+    }
+
+    fun consumeNeedsNicknameSetup() {
+        _uiState.update { it.copy(needsNicknameSetup = false, nicknameSuggestionForSetup = null) }
     }
 }

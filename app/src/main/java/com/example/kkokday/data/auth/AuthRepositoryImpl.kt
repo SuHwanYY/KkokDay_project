@@ -57,11 +57,6 @@ class AuthRepositoryImpl @Inject constructor(
         Unit
     }
 
-    override suspend fun deleteCurrentUser(): Result<Unit> = runAuthCatching {
-        firebaseAuth.get().currentUser?.delete()?.await()
-        Unit
-    }
-
     override fun currentUserUid(): String? = firebaseAuth.get().currentUser?.uid
 
     override fun currentUserEmail(): String? = firebaseAuth.get().currentUser?.email

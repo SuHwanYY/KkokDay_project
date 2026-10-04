@@ -20,6 +20,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.AlertDialog
@@ -145,12 +146,20 @@ private fun CourseDetailScreenContent(
     val clipboardManager = LocalClipboardManager.current
     val coroutineScope = rememberCoroutineScope()
     var directionsDestination by remember { mutableStateOf<NavigationDestination?>(null) }
+    var showShareImageDialog by remember { mutableStateOf(false) }
     val course = uiState.course
 
     directionsDestination?.let { destination ->
         DirectionsBottomSheet(
             destination = destination,
             onDismiss = { directionsDestination = null },
+        )
+    }
+
+    if (showShareImageDialog && course != null) {
+        CourseShareImageDialog(
+            course = course,
+            onDismiss = { showShareImageDialog = false },
         )
     }
 
@@ -226,7 +235,12 @@ private fun CourseDetailScreenContent(
                                 snackbarHostState.showKkokDaySnackbar("링크를 복사했어요", KkokDaySnackbarTone.SUCCESS)
                             }
                         }) {
-                            Icon(Icons.Filled.Share, contentDescription = "공유", tint = KkokDayMainSubText)
+                            Icon(Icons.Filled.Share, contentDescription = "링크 공유", tint = KkokDayMainSubText)
+                        }
+                        if (course.places.isNotEmpty()) {
+                            IconButton(onClick = { showShareImageDialog = true }) {
+                                Icon(Icons.Filled.Image, contentDescription = "이미지로 공유", tint = KkokDayMainSubText)
+                            }
                         }
                     }
 

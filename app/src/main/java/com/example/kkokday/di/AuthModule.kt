@@ -2,6 +2,10 @@ package com.example.kkokday.di
 
 import com.example.kkokday.data.auth.AuthRepository
 import com.example.kkokday.data.auth.AuthRepositoryImpl
+import com.example.kkokday.data.auth.FirstSignupCompletionRepository
+import com.example.kkokday.data.auth.FirstSignupCompletionRepositoryImpl
+import com.example.kkokday.data.auth.PendingEmailSignupRepository
+import com.example.kkokday.data.auth.PendingEmailSignupRepositoryImpl
 import com.example.kkokday.data.nickname.NicknameRepository
 import com.example.kkokday.data.nickname.NicknameRepositoryImpl
 import dagger.Binds
@@ -21,4 +25,14 @@ abstract class AuthModule {
     @Binds
     @Singleton
     abstract fun bindNicknameRepository(impl: NicknameRepositoryImpl): NicknameRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindPendingEmailSignupRepository(impl: PendingEmailSignupRepositoryImpl): PendingEmailSignupRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindFirstSignupCompletionRepository(
+        impl: FirstSignupCompletionRepositoryImpl,
+    ): FirstSignupCompletionRepository
 }

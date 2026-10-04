@@ -6,6 +6,12 @@ interface NicknameRepository {
     suspend fun isNicknameAvailable(nickname: String): Result<Boolean>
 
     /**
+     * users/{uid} 프로필이 이미 만들어졌는지 확인한다. 이메일 인증/카카오 로그인 직후
+     * "최초 가입을 마무리해야 하는지"를 판단할 때 쓴다.
+     */
+    suspend fun hasUserProfile(uid: String): Result<Boolean>
+
+    /**
      * nicknames/{nickname} 문서 생성과 users/{uid} 프로필 생성을 Firestore 트랜잭션으로
      * 원자적으로 처리한다. 트랜잭션 내부에서 닉네임 점유 여부를 다시 확인하므로,
      * [isNicknameAvailable]로 미리 확인했더라도 그 사이 다른 사용자가 선점했다면

@@ -90,11 +90,15 @@ object KkokDayRoute {
     const val RESET_PASSWORD_OOB_CODE_ARG = "oobCode"
     const val RESET_PASSWORD = "$RESET_PASSWORD_BASE?$RESET_PASSWORD_OOB_CODE_ARG={$RESET_PASSWORD_OOB_CODE_ARG}"
 
+    // 카카오 최초 로그인, 이메일 최초 가입(로컬 닉네임 캐시가 없거나 이미 선점된 경우) 양쪽이
+    // 공유하는 닉네임 설정 화면. kakaoId가 없으면(=이메일 경로) 예약 후 KakaoSession이 아니라
+    // Firebase Auth displayName을 갱신한다.
     private const val KAKAO_NICKNAME_SETUP_BASE = "kakao_nickname_setup"
     const val KAKAO_NICKNAME_SETUP_ID_ARG = "kakaoId"
     const val KAKAO_NICKNAME_SETUP_NICKNAME_ARG = "nickname"
     const val KAKAO_NICKNAME_SETUP_PROFILE_IMAGE_ARG = "profileImageUrl"
-    const val KAKAO_NICKNAME_SETUP = "$KAKAO_NICKNAME_SETUP_BASE/{$KAKAO_NICKNAME_SETUP_ID_ARG}?" +
+    const val KAKAO_NICKNAME_SETUP = "$KAKAO_NICKNAME_SETUP_BASE?" +
+        "$KAKAO_NICKNAME_SETUP_ID_ARG={$KAKAO_NICKNAME_SETUP_ID_ARG}&" +
         "$KAKAO_NICKNAME_SETUP_NICKNAME_ARG={$KAKAO_NICKNAME_SETUP_NICKNAME_ARG}&" +
         "$KAKAO_NICKNAME_SETUP_PROFILE_IMAGE_ARG={$KAKAO_NICKNAME_SETUP_PROFILE_IMAGE_ARG}"
 
@@ -105,10 +109,15 @@ object KkokDayRoute {
         EMAIL_VERIFICATION_BASE
     }
 
-    /** 카카오 최초 로그인 직후, 프로필 정보를 담아 닉네임 설정 화면으로 이동할 라우트를 만든다. */
-    fun kakaoNicknameSetupRoute(kakaoId: Long, nicknameSuggestion: String?, profileImageUrl: String?): String {
-        return "$KAKAO_NICKNAME_SETUP_BASE/$kakaoId" +
-            "?$KAKAO_NICKNAME_SETUP_NICKNAME_ARG=${Uri.encode(nicknameSuggestion.orEmpty())}" +
+    /**
+     * 최초 가입 직후, 프로필 정보를 담아 닉네임 설정 화면으로 이동할 라우트를 만든다.
+     * [kakaoId]가 null이면 이메일 가입 경로 — 화면이 예약 후 KakaoSession 대신 Firebase Auth
+     * displayName을 갱신한다.
+     */
+    fun kakaoNicknameSetupRoute(kakaoId: Long?, nicknameSuggestion: String?, profileImageUrl: String?): String {
+        return "$KAKAO_NICKNAME_SETUP_BASE" +
+            "?$KAKAO_NICKNAME_SETUP_ID_ARG=${kakaoId?.toString().orEmpty()}" +
+            "&$KAKAO_NICKNAME_SETUP_NICKNAME_ARG=${Uri.encode(nicknameSuggestion.orEmpty())}" +
             "&$KAKAO_NICKNAME_SETUP_PROFILE_IMAGE_ARG=${Uri.encode(profileImageUrl.orEmpty())}"
     }
 
@@ -272,12 +281,13 @@ fun KkokDayNavHost(navController: NavHostController = rememberNavController()) {
                 onNavigateToForgotPassword = {
                     navController.navigate(KkokDayRoute.FORGOT_PASSWORD)
                 },
-                onNeedsKakaoNicknameSetup = { kakaoId, nicknameSuggestion, profileImageUrl ->
+                onNeedsNicknameSetup = { kakaoId, nicknameSuggestion, profileImageUrl ->
                     // LOGIN을 백스택에서 지우지 않는다 — 지우면(popUpTo inclusive) 이 화면이
                     // 백스택의 유일한 항목이 되어, 시스템 뒤로가기를 누를 때 로그인 화면으로
                     // 돌아가는 대신 앱이 그대로 종료돼버린다. Firebase 로그인은 됐지만 닉네임을
-                    // 아직 확정하지 않은 상태로 남는데, 재로그인 시 findExistingNickname이 다시
-                    // null을 반환해 이 화면으로 정상적으로 돌아오므로 안전하다.
+                    // 아직 확정하지 않은 상태로 남는데, 재로그인 시 findExistingNickname/
+                    // FirstSignupCompletionRepository가 다시 같은 결과를 반환해 이 화면으로
+                    // 정상적으로 돌아오므로 안전하다.
                     navController.navigate(
                         KkokDayRoute.kakaoNicknameSetupRoute(kakaoId, nicknameSuggestion, profileImageUrl),
                     )
@@ -287,7 +297,11 @@ fun KkokDayNavHost(navController: NavHostController = rememberNavController()) {
         insetSafeComposable(
             route = KkokDayRoute.KAKAO_NICKNAME_SETUP,
             arguments = listOf(
-                navArgument(KkokDayRoute.KAKAO_NICKNAME_SETUP_ID_ARG) { type = NavType.LongType },
+                navArgument(KkokDayRoute.KAKAO_NICKNAME_SETUP_ID_ARG) {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
+                },
                 navArgument(KkokDayRoute.KAKAO_NICKNAME_SETUP_NICKNAME_ARG) {
                     type = NavType.StringType
                     nullable = true
@@ -311,19 +325,10 @@ fun KkokDayNavHost(navController: NavHostController = rememberNavController()) {
         insetSafeComposable(KkokDayRoute.SIGNUP) {
             SignupScreen(
                 onSignUpSuccess = {
-                    navController.navigate(KkokDayRoute.emailVerificationRoute()) {
-                        popUpTo(KkokDayRoute.LOGIN) { inclusive = true }
-                    }
-                },
-                onExistingAccountLoginSuccess = {
-                    // 이미 인증까지 끝난 본인 계정으로 로그인된 경우 — 일반 로그인 성공과 동일하게 홈으로.
+                    // 이메일 인증 확인, 닉네임 예약(최종 가입 처리)까지 이 화면 안에서 전부 끝낸
+                    // 뒤에만 호출되므로 곧바로 홈으로 보낸다 — 더 이상 별도 인증 대기 화면을
+                    // 거치지 않는다.
                     navController.navigate(KkokDayRoute.HOME) {
-                        popUpTo(KkokDayRoute.LOGIN) { inclusive = true }
-                    }
-                },
-                onExistingUnverifiedAccount = { notice ->
-                    // 예전에 가입만 시작한 본인 계정 — 인증 메일을 재발송했다는 안내와 함께 인증 대기 화면으로.
-                    navController.navigate(KkokDayRoute.emailVerificationRoute(notice)) {
                         popUpTo(KkokDayRoute.LOGIN) { inclusive = true }
                     }
                 },
@@ -348,6 +353,17 @@ fun KkokDayNavHost(navController: NavHostController = rememberNavController()) {
             EmailVerificationScreen(
                 onVerified = {
                     navController.navigate(KkokDayRoute.HOME) {
+                        popUpTo(KkokDayRoute.EMAIL_VERIFICATION) { inclusive = true }
+                    }
+                },
+                onNeedsNicknameSetup = { nicknameSuggestion ->
+                    navController.navigate(
+                        KkokDayRoute.kakaoNicknameSetupRoute(
+                            kakaoId = null,
+                            nicknameSuggestion = nicknameSuggestion,
+                            profileImageUrl = null,
+                        ),
+                    ) {
                         popUpTo(KkokDayRoute.EMAIL_VERIFICATION) { inclusive = true }
                     }
                 },
